@@ -512,8 +512,13 @@ func resourceVSphereVirtualMachineRead(d *schema.ResourceData, meta interface{})
 	var pciDevs []string
 	for _, dev := range vprops.Config.Hardware.Device {
 		if pci, ok := dev.(*types.VirtualPCIPassthrough); ok {
-			devID := pci.Backing.(*types.VirtualPCIPassthroughDeviceBackingInfo).Id
-			pciDevs = append(pciDevs, devID)
+			if pciBacking, ok := pci.Backing.(*types.VirtualPCIPassthroughDeviceBackingInfo) ; ok {
+				devId := pciBacking.Id
+				pciDevs = append(pciDevs, devId)
+			} else {
+				log.Printf("[DEBUG] Ignoring VM %q VirtualPCIPassthrough device with backing type of %T",
+					vm.InventoryPath, pci.Backing)
+			}
 		}
 	}
 	err = d.Set("pci_device_id", pciDevs)
